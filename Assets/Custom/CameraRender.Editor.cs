@@ -7,8 +7,10 @@ partial class CameraRender
     partial void DrawUnsupportedShaders();
     partial void DrawGizmos();
     partial void PrepareForSceneWindow();
+    partial void PrepareBuffer();
 
 #if UNITY_EDITOR 
+    string SampleName { get; set; }
 
     static ShaderTagId[] legacyShaderTagIds =
     {
@@ -21,6 +23,10 @@ partial class CameraRender
     };
     static Material errorMaterial;
 
+    partial void PrepareBuffer()
+    {
+        buffer.name = SampleName = camera.name;
+    }
     partial void PrepareForSceneWindow()
     {
         if (camera.cameraType == CameraType.SceneView)
@@ -55,5 +61,7 @@ partial class CameraRender
         var filteringSettings = FilteringSettings.defaultValue;
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
     }
+#else
+    const string SampleName = bufferName;
 #endif
 }
