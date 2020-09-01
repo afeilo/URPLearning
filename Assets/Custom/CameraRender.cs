@@ -9,7 +9,9 @@ public partial class CameraRender
     CullingResults cullingResults;
     const string bufferName = "Render Camera";
     static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    static ShaderTagId litShaderTagId = new ShaderTagId("CustomLit");
 
+    Lighting lighting = new Lighting();
 
     CommandBuffer buffer = new CommandBuffer
     {
@@ -27,6 +29,7 @@ public partial class CameraRender
             return;
         }
         Setup();
+        lighting.Setup(context);
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
@@ -73,6 +76,7 @@ public partial class CameraRender
             enableDynamicBatching = useDynamicBatching,
             enableInstancing = useGPUInstancing,
         };
+        drawingSettings.SetShaderPassName(1, litShaderTagId);
         var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
         context.DrawSkybox(camera);
