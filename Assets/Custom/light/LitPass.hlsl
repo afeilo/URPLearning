@@ -4,7 +4,10 @@
 #include "../ShaderLibrary/Common.hlsl"
 #include "../ShaderLibrary/Surface.hlsl"
 #include "../ShaderLibrary/Light.hlsl"
+#include "../ShaderLibrary/BRDF.hlsl"
+
 #include "../ShaderLibrary/Lighting.hlsl"
+
 
 struct Attributes {
 	float3 positionOS : POSITION;
@@ -16,6 +19,7 @@ struct Attributes {
 struct Varyings {
 	float4 positionCS : SV_POSITION;
 	float3 normalWS : VAR_NORMAL;
+	float3 positionWS : VAR_POSITION;
 	float2 uv : TEXCOORD0;
 	UNITY_VERTEX_INPUT_INSTANCE_ID
 };
@@ -29,6 +33,8 @@ UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
 UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
 UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
 UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
+UNITY_DEFINE_INSTANCED_PROP(float, _Metallic)
+UNITY_DEFINE_INSTANCED_PROP(float, _Smoothness)
 //UNITY_DEFINE_INSTANCED_PROP(sampler2D, _BaseMap)
 UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
 
@@ -49,13 +55,27 @@ float4 LitPassFragment(Varyings input):SV_TARGET {
 	float4 color = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
 	//float4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
 	//sampler2D map = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseMap);
-	float4 baseMap = tex2D(_BaseMap, input.uv);
-	float cutOff = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff);
-	float4 base = color* baseMap;
+	//float4 baseMap = tex2D(_BaseMap, input.uv);
+	//float cutOff = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff);
+	//float4 base = color* baseMap;
+	Surface surface;
+	surface.normal = normalize(input.normalWS);
+	surface.color = color.rgb;
+	surface.alpha = color.a;
+	surface.metallic = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Metallic);
+	surface.smoothness = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Smoothness);
+	surface.viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
+	
 #if defined(_CLIPPING)
-	clip(base.a - cutOff);
+	clip(color.a - cutOff);
 #endif
-	return base;
+#if defined(_PREMULTIPLY_ALPHA)
+	BRDF brdf = GetBRDF(surface, true);
+#else
+	BRDF brdf = GetBRDF(surface);
+#endif
+	float3 base = GetLighting(surface, brdf);
+	return float4(base,1);
 }
 
 #endif

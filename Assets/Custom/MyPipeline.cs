@@ -13,6 +13,7 @@ public class MyPipeline : RenderPipeline
         this.useGPUInstancing = useGPUInstancing;
         cameraRender = new CameraRender();
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
+        GraphicsSettings.lightsUseLinearIntensity = true;
     }
    
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
